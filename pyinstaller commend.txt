@@ -1,0 +1,4 @@
+pyinstaller --noconfirm --onefile --icon "icon.ico" --add-data "icon.ico;." --add-data "content.png;." --add-binary "onnxruntime_providers_tensorrt.dll;./onnxruntime/capi/" --add-binary "onnxruntime_providers_cuda.dll;./onnxruntime/capi/" --add-binary "onnxruntime_providers_shared.dll;./onnxruntime/capi/" -w  "ABGRemoverGUI.py"
+
+작업시 Lib/site-packages/onnxruntime/capi/ 안에서 dll 세개를 가져와야함.
+

@@ -10,6 +10,11 @@
 
 분리된 이미지는 원본 이미지의 폴더 내에 다른 이름으로 저장됩니다.
 
+===
+
+릴리즈 : https://github.com/DCP-arca/ABG-Remover-with-GUI/releases/
+
+===
 
 WebUI 확장 ABG Remover : https://github.com/KutsuyaYuki/ABG_extension
 

@@ -1,2 +1,7 @@
 *.dll
+abgr_error.log
 model/
+__pycache__/
+build/
+dist/
+ABGRemoverGUI.spec

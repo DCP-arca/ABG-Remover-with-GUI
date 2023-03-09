@@ -3,7 +3,13 @@ import numpy as np
 import cv2
 from onnxruntime import InferenceSession
 
+import logging
+import traceback
+
 rmbg_model = None
+
+logging.basicConfig(filename='abgr_error.log', level=logging.DEBUG)
+
 
 # img returned [h,w,3]
 def read_image(src):
@@ -13,6 +19,7 @@ def read_image(src):
 
 
 def write_image(dst, img, params=None):
+    print(dst, "에 저장됨!")
     try:
         ext = os.path.splitext(dst)[1]
         result, n = cv2.imencode(ext, img, params)
@@ -24,7 +31,7 @@ def write_image(dst, img, params=None):
         else:
             return False
     except Exception as e:
-        print(e)
+        logging.error(traceback.format_exc() + str(e))
         return False
 
 
@@ -37,7 +44,12 @@ def get_mask(img, s=1024):
     img_input[ph // 2:ph // 2 + h, pw // 2:pw // 2 + w] = cv2.resize(img, (w, h))
     img_input = np.transpose(img_input, (2, 0, 1))
     img_input = img_input[np.newaxis, :]
-    mask = rmbg_model.run(None, {'img': img_input})[0][0]
+    try:
+        mask = rmbg_model.run(None, {'img': img_input})[0][0]
+    except Exception as e:
+        logging.error(traceback.format_exc() + str(e))
+        assert False
+        return None
     mask = np.transpose(mask, (1, 2, 0))
     mask = mask[ph // 2:ph // 2 + h, pw // 2:pw // 2 + w]
     mask = cv2.resize(mask, (w0, h0))[:, :, np.newaxis]
@@ -53,27 +65,33 @@ def rmbg_fn(img):
     return mask, img
 
 
-def apply_abgr(model_path, src):
+def apply_abgr(model_path, src, save_path=""):
     global rmbg_model
 
     if not rmbg_model:
-        print("need to init model")
+        print("* 모델 로딩 중...")
         providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
         rmbg_model = InferenceSession(model_path, providers=providers)
-        print("init done")
+        print("* 로딩 완료!")
 
-    print("abgr on ", src)
+    print("ABGR 적용 중 - 대상 파일 :", src)
 
     img_tar = read_image(src)
     i1, i2 = rmbg_fn(img_tar)
 
-    ns = src.split(".")
+    path_pair = os.path.split(src)
+    path_dir = path_pair[0]
+    path_filename = path_pair[1]
 
-    filename = "".join(ns[:-1])
-    ext = "".join(ns[-1:])
-    write_image(filename + "_mask." + ext, i1)
-    write_image(filename + "_img." + ext, i2)
+    path_pair = os.path.splitext(path_filename)
+    path_filename = path_pair[0]
+    path_ext = path_pair[1]
 
+    if save_path and os.path.isdir(save_path):
+        path_dir = save_path
+
+    write_image(path_dir + "/" + path_filename + "_mask" + path_ext, i1)
+    write_image(path_dir + "/" + path_filename + "_img" + path_ext, i2)
 
 
 if __name__ == '__main__':
